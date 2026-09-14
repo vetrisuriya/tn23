@@ -1,0 +1,81 @@
+.game{min-height:100svh;position:relative;background:#8ec96e;color:#fff8dd;font-family:Arial,"Noto Sans Tamil",sans-serif;overflow:hidden}
+.canvasWrap{position:absolute;inset:0}
+.canvasWrap canvas{touch-action:none}
+.header,.mission,.controls,.dialogue,.minimap{position:absolute;z-index:20}
+.header{top:3%;left:4%;display:flex;gap:20px;align-items:flex-start;pointer-events:none}
+.header h1{margin:0;font-size:clamp(48px,7vw,80px);line-height:.85;letter-spacing:-.08em;text-shadow:0 3px #31534c}
+.header p{margin:0;font-size:10px;letter-spacing:.15em;text-shadow:0 1px #31534c}
+.header strong{font-size:13px;text-shadow:0 1px #31534c}
+.header button{pointer-events:auto;padding:10px 14px;border:0;border-radius:14px;background:#fff1c3;color:#29453f;font-weight:800;cursor:pointer;box-shadow:0 3px #55746c}
+.mission{top:3%;right:3%;width:min(330px,36vw);padding:14px 16px;border:2px solid #f9edbf99;border-radius:16px;background:#294b45ee;box-shadow:0 5px #1d3934}
+.mission small{color:#f7dc5e;font-weight:bold;font-size:11px}
+.mission h2{margin:6px 0;font-size:17px;line-height:1.25}
+.mission p{font-size:12px;line-height:1.4;margin:6px 0}
+.mission>div{height:8px;background:#18352f;border-radius:9px;overflow:hidden;margin:6px 0}
+.mission>div i{display:block;height:100%;background:#f5d85c;transition:width .4s}
+.mission b{font-size:11px;color:#ffe9a8;display:block;margin-top:4px}
+.earned{display:inline-block;margin-top:6px;font-size:12px;font-weight:800;color:#f5d85c}
+.mission a{display:block;margin-top:4px;font-size:11px;color:#9fd8ff}
+.minimap{right:3%;bottom:3%;width:130px;height:130px;background:#294b45dd;border:2px solid #f9edbf99;border-radius:12px;overflow:hidden}
+.minimap i{position:absolute;width:7px;height:7px;margin:-3px;background:#fff8dd;border-radius:50%;opacity:.85}
+.minimap i.mapTarget{background:#f5d75d;width:11px;height:11px;margin:-5px;box-shadow:0 0 6px #f5d75d;animation:blink 1s infinite alternate}
+.minimap em{position:absolute;width:10px;height:10px;margin:-5px;background:#ff9d3c;border:2px solid #fff;border-radius:50%;z-index:2}
+@keyframes blink{to{transform:scale(1.4)}}
+.controls{bottom:3%;left:4%;max-width:min(420px,92vw)}
+.actionRow{display:flex;gap:10px}
+.actionRow button,.dialogue button{padding:12px 16px;border:0;border-radius:14px;background:#f5d75d;color:#29453f;font-weight:800;cursor:pointer;box-shadow:0 4px #9c7522;font-size:15px}
+.actionRow button:disabled{opacity:.45;cursor:default}
+.actionRow button span{margin-left:8px}
+.horn{background:#f1884d !important;box-shadow:0 4px #a84d28 !important;min-width:110px}
+.controls p{font-size:11px;text-shadow:0 1px #31534c;margin:6px 0}
+.nearMsg{background:#f5d75d;color:#29453f;font-weight:800;padding:4px 10px;border-radius:8px;display:inline-block;text-shadow:none !important}
+.dpad{display:grid;justify-items:center;gap:2px;margin-top:6px;touch-action:none;user-select:none;-webkit-user-select:none}
+.dpad button{width:52px;height:44px;margin:2px;border:0;border-radius:10px;background:#fff8d9ee;font-size:20px;font-weight:800;touch-action:none}
+.dpad span{display:flex;gap:4px}
+@media (pointer:fine){.dpad{opacity:.85}}
+.npcRow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.npcRow button{padding:6px 10px;border-radius:20px;border:2px solid #fff8dd88;background:#294b45cc;color:#fff8dd;font-size:11px;font-weight:700;cursor:pointer}
+.dialogue{left:50%;bottom:4%;width:min(520px,90vw);padding:16px;transform:translateX(-50%);background:#fff7dd;color:#3f3126;border:4px solid #684631;border-radius:16px;box-shadow:0 7px #356050}
+.dialogue h3{margin:2px 0 4px}
+.dialogue p{margin:6px 0;font-size:14px}
+.dialogue small{color:#8b6650}
+.dialogBtns{display:flex;gap:10px;align-items:center}
+.dialogBtns a{font-size:12px;color:#2a6fa8}
+@media (max-width:700px){
+.mission{width:min(250px,58vw);padding:10px 12px}
+.mission h2{font-size:13px}
+.mission p{font-size:11px}
+.minimap{width:90px;height:90px;top:auto;bottom:34%;right:3%;left:auto}
+.header h1{font-size:44px}
+}
+.overlay{position:absolute;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(circle at 50% 35%,#bfe3ec 0%,#7fb7c9 60%,#4e8595 100%)}
+.overlayCard{text-align:center;background:#fff8ddf2;color:#29453f;padding:34px 40px;border-radius:24px;border:5px solid #684631;box-shadow:0 10px #356050;max-width:min(480px,90vw)}
+.overlayCard p{margin:4px 0;font-size:11px;letter-spacing:.18em;font-weight:700}
+.overlayCard h1{margin:0;font-size:clamp(64px,12vw,110px);letter-spacing:-.08em;line-height:.9}
+.overlayCard strong{font-size:16px}
+.tagline{font-size:13px !important;letter-spacing:0 !important;font-weight:400 !important;font-style:italic;margin:12px 0 !important}
+.beginBtn{margin-top:10px;padding:14px 44px;border:0;border-radius:18px;background:#f5d75d;color:#29453f;font-weight:900;font-size:20px;letter-spacing:.1em;cursor:pointer;box-shadow:0 5px #9c7522}
+.beginBtn:hover{transform:translateY(-2px)}
+.hint{font-size:11px !important;letter-spacing:0 !important;margin-top:14px !important;opacity:.75}
+.langBtn{margin-top:8px;padding:8px 16px;border:0;border-radius:12px;background:#294b45;color:#fff8dd;font-weight:800;cursor:pointer}
+.jobList{display:flex;flex-direction:column;gap:5px;margin:8px 0}
+.jobItem{display:flex;gap:8px;align-items:center;padding:7px 10px;border-radius:10px;border:2px solid transparent;background:#18352f;color:#fff8dd;font-size:11px;font-weight:700;cursor:pointer;text-align:left}
+.jobItem:disabled{cursor:default}
+.jobItem:not(:disabled):hover{border-color:#f5d75d66}
+.jobActive{background:#f5d75d !important;color:#29453f !important}
+.jobTracked{border-color:#7fe3d0 !important}
+.abandon{margin:4px 0;padding:6px 12px;border-radius:10px;border:0;background:#a84837;color:#fff;font-size:11px;font-weight:800;cursor:pointer}
+.emoteBar{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.emoteBar>button{width:40px;height:36px;border-radius:10px;border:2px solid transparent;background:#294b45cc;font-size:18px;cursor:pointer}
+.emoteActive{border-color:#f5d75d !important}
+.outfitRow{display:flex;gap:5px;align-items:center;margin-left:4px}
+.outfitRow small{font-size:10px;opacity:.85}
+.outfitRow button{width:22px !important;height:22px !important;border-radius:50% !important;border:2px solid #fff8dd88 !important;padding:0 !important}
+.shirtActive{border-color:#f5d75d !important;box-shadow:0 0 6px #f5d75d}
+.minimap i.mapRoadH{left:1.7%;width:96.6%;height:3px;margin:0;background:#cdb583aa;border-radius:0;opacity:1}
+.minimap i.mapRoadV{top:13.8%;height:75.9%;width:3px;margin:0;background:#cdb583aa;border-radius:0;opacity:1}
+.mission .fact{font-size:10px;opacity:.85;font-style:italic;margin:4px 0 0}
+.steps{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.stepBtn{padding:10px 12px;border-radius:10px;border:2px solid #f5d75d66;background:#18352f;color:#fff8dd;font-weight:800;font-size:13px;cursor:pointer;text-align:left}
+.stepBtn:disabled{opacity:.4;cursor:default}
+.stepBtn.done{background:#4c9b77;border-color:#4c9b77}
