@@ -1276,7 +1276,7 @@ export default function World3D({ keysRef, targetId, offerIds, lang, hornTick, s
   const offerSet = useMemo(() => new Set(offerIds), [offerIds]);
 
   return (
-    <Canvas shadows camera={{ position: [-95, 105, 95], fov: 11, near: 1, far: 1500 }} style={{ position: "absolute", inset: 0 }}>
+    <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true, powerPreference: "high-performance" }} camera={{ position: [-95, 105, 95], fov: 11, near: 1, far: 1500 }} style={{ position: "absolute", inset: 0 }}>
       <color attach="background" args={["#bfe3ec"]} />
       <fog attach="fog" args={["#bfe3ec", 110, 250]} />
       <hemisphereLight args={["#fff6e8", "#5a8a6a", 1.0]} />

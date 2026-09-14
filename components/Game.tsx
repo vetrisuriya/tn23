@@ -336,7 +336,8 @@ export default function Game() {
           <button onClick={() => { clickSound(); setResetTick((n) => n + 1); }}>⟳ {lang === "en" ? "Reset" : "மீட்பு"}</button>
           <button onClick={() => { clickSound(); setSeed(Math.floor(Math.random() * 1e9)); }}>🔀 {lang === "en" ? "Shuffle" : "மாற்று"}</button>
         </div>
-        <p>{hornMsg ? "Peeep! 📯" : `${t.keys} · E = action · H = horn`}</p>
+        <p className={styles.keysHint}>{hornMsg ? "Peeep! 📯" : `${t.keys} · E = action · H = horn`}</p>
+        <p className={styles.touchHint}>{hornMsg ? "Peeep! 📯" : `${lang === "en" ? "D-pad or tap the ground to ride · buttons act" : "D-பேட் அல்லது தரையைத் தொட்டு ஓட்டவும்"}`}</p>
         {crossing && <p className={styles.nearMsg}>{s.crossing}</p>}
         {!celebrateMsg && stage === "deliver" && <p>{s.nextUp}</p>}
         <div className={styles.dpad}>
