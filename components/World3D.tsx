@@ -573,7 +573,7 @@ function signTexture(en: string, ta: string) {
   return t;
 }
 
-function StreetSign({ s, lang }: { s: Street; lang: "en" | "ta" }) {
+function StreetSign({ s, lang, compact }: { s: Street; lang: "en" | "ta"; compact: boolean }) {
   const tex = useMemo(() => signTexture(s.en, s.ta), [s.en, s.ta]);
   useEffect(() => () => { tex.dispose(); }, [tex]);
   return (
@@ -595,8 +595,8 @@ function StreetSign({ s, lang }: { s: Street; lang: "en" | "ta" }) {
         <meshBasicMaterial map={tex} toneMapped={false} />
       </mesh>
       {/* floating pill so the street name reads from gameplay angles too */}
-      <Html center distanceFactor={50} position={[0, 4.4, 0]} style={{ pointerEvents: "none" }}>
-        <div style={{ background: "#284b45ee", color: "#fff8dd", fontSize: 12, fontWeight: 800, padding: "3px 10px", borderRadius: 10, whiteSpace: "nowrap", border: "2px solid #f5d75d88" }}>
+      <Html center distanceFactor={compact ? 85 : 50} position={[0, 4.4, 0]} style={{ pointerEvents: "none" }}>
+        <div style={{ background: "#284b45ee", color: "#fff8dd", fontSize: compact ? 10 : 12, fontWeight: 800, padding: "3px 10px", borderRadius: 10, whiteSpace: "nowrap", border: "2px solid #f5d75d88" }}>
           {lang === "en" ? s.en : s.ta}
         </div>
       </Html>
@@ -605,7 +605,7 @@ function StreetSign({ s, lang }: { s: Street; lang: "en" | "ta" }) {
 }
 
 // Vellore welcome arch over Main Road + flower cart near the temple street.
-function WelcomeArch() {
+function WelcomeArch({ showLabel }: { showLabel: boolean }) {
   return (
     <group position={[40, 0, 0]}>
       {[-3.8, 3.8].map((dz, i) => (
@@ -618,11 +618,13 @@ function WelcomeArch() {
         <boxGeometry args={[1.2, 1.3, 9]} />
         <meshStandardMaterial color="#f3e6c8" roughness={0.85} />
       </mesh>
-      <Html center distanceFactor={60} position={[0, 5.4, 0]} style={{ pointerEvents: "none" }}>
-        <div style={{ width: 190, textAlign: "center", color: "#7a2e1f", fontSize: 13, fontWeight: 900 }}>
-          VELLORE · வேலூர்
-        </div>
-      </Html>
+      {showLabel && (
+        <Html center distanceFactor={60} position={[0, 5.4, 0]} style={{ pointerEvents: "none" }}>
+          <div style={{ width: 190, textAlign: "center", color: "#7a2e1f", fontSize: 13, fontWeight: 900 }}>
+            VELLORE · வேலூர்
+          </div>
+        </Html>
+      )}
     </group>
   );
 }
@@ -654,9 +656,9 @@ function FlowerCart() {
   );
 }
 
-function Player({ keysRef, destRef, movers, circles, resetTick, startX, startZ, shirt, emote, emoteTick, hornTick, onPos }: {
+function Player({ keysRef, destRef, movers, circles, resetTick, startX, startZ, shirt, emote, emoteTick, hornTick, compact, onPos }: {
   keysRef: KeysRef; destRef: DestRef; movers: MoversRef; circles: Circle[]; resetTick: number; startX: number; startZ: number;
-  shirt: string; emote: string; emoteTick: number; hornTick: number;
+  shirt: string; emote: string; emoteTick: number; hornTick: number; compact: boolean;
   onPos: (p: PlayerState) => void;
 }) {
   const g = useRef<THREE.Group>(null!);
@@ -767,11 +769,11 @@ function Player({ keysRef, destRef, movers, circles, resetTick, startX, startZ, 
         <sphereGeometry args={[0.3, 14, 14]} />
         <meshStandardMaterial color="#be764e" roughness={0.8} />
       </mesh>
-      <Html center distanceFactor={60} position={[0, 2.7, 0]} style={{ pointerEvents: "none" }}>
-        <div style={{ background: "#fff8d9", color: "#263d37", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 8 }}>You · நீங்கள்</div>
+      <Html center distanceFactor={compact ? 95 : 60} position={[0, 2.7, 0]} style={{ pointerEvents: "none" }}>
+        <div style={{ background: "#fff8d9", color: "#263d37", fontSize: compact ? 9 : 10, fontWeight: 800, padding: "2px 8px", borderRadius: 8, whiteSpace: "nowrap" }}>You · நீங்கள்</div>
       </Html>
       {bubble && (
-        <Html center distanceFactor={55} position={[0, 3.3, 0]} style={{ pointerEvents: "none" }}>
+        <Html center distanceFactor={compact ? 85 : 55} position={[0, 3.3, 0]} style={{ pointerEvents: "none" }}>
           <div style={{ fontSize: 26, filter: "drop-shadow(0 2px 3px rgba(0,0,0,.3))" }}>{emote}</div>
         </Html>
       )}
@@ -780,7 +782,7 @@ function Player({ keysRef, destRef, movers, circles, resetTick, startX, startZ, 
 }
 
 // Customer waiting at the TN23 shop with their broken cycle lying beside them.
-function CustomerNpc({ name, color, visible }: { name: string; color: string; visible: boolean }) {
+function CustomerNpc({ name, color, visible, compact }: { name: string; color: string; visible: boolean; compact: boolean }) {
   const g = useRef<THREE.Group>(null!);
   useFrame((s) => {
     const t = s.clock.elapsedTime;
@@ -803,7 +805,7 @@ function CustomerNpc({ name, color, visible }: { name: string; color: string; vi
           <Wheel position={[0, 0.5, -0.8]} />
         </group>
         {visible && (
-          <Html center distanceFactor={60} position={[0, 2.0, 0]} style={{ pointerEvents: "none" }}>
+          <Html center distanceFactor={compact ? 95 : 60} position={[0, 2.0, 0]} style={{ pointerEvents: "none" }}>
             <div style={{ background: "#f5d75d", color: "#29453f", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 8, whiteSpace: "nowrap", border: "2px solid #fff8dd" }}>
               🔧 {name}
             </div>
@@ -816,7 +818,7 @@ function CustomerNpc({ name, color, visible }: { name: string; color: string; vi
 
 // Fellow riders wandering the grass blocks — Messenger-style presence.
 // Spots shuffle with the seed; badges show only when you're close.
-function Bots({ lang, movers, spots, visible }: { lang: "en" | "ta"; movers: MoversRef; spots: { x: number; z: number }[]; visible: boolean[] }) {
+function Bots({ lang, movers, spots, visible, compact }: { lang: "en" | "ta"; movers: MoversRef; spots: { x: number; z: number }[]; visible: boolean[]; compact: boolean }) {
   const refs = useRef<(THREE.Group | null)[]>([]);
   useFrame((s) => {
     const t = s.clock.elapsedTime;
@@ -847,7 +849,7 @@ function Bots({ lang, movers, spots, visible }: { lang: "en" | "ta"; movers: Mov
               <meshStandardMaterial color="#c98a5e" roughness={0.8} />
             </mesh>
             {visible[i] && (
-              <Html center distanceFactor={60} position={[0, 2.0, 0]} style={{ pointerEvents: "none" }}>
+              <Html center distanceFactor={compact ? 95 : 60} position={[0, 2.0, 0]} style={{ pointerEvents: "none" }}>
                 <div style={{ background: "rgba(255,248,217,.92)", color: "#263d37", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 8, whiteSpace: "nowrap" }}>
                   🛵 {lang === "en" ? b.en : b.ta}
                 </div>
@@ -1238,11 +1240,12 @@ function Sheep({ x, z, phase, movers, idx }: { x: number; z: number; phase: numb
   );
 }
 
-export default function World3D({ keysRef, targetId, offerIds, lang, hornTick, shirt, emote, emoteTick, customer, seed, resetTick, badges, onPos }: {
+export default function World3D({ keysRef, targetId, offerIds, lang, hornTick, shirt, emote, emoteTick, customer, seed, resetTick, badges, compact, onPos }: {
   keysRef: KeysRef; targetId: string | null; offerIds: string[]; lang: "en" | "ta";
   hornTick: number; shirt: string; emote: string; emoteTick: number;
   customer: { name: string; color: string } | null;
   seed: number; resetTick: number; badges: { customer: boolean; bots: boolean[] };
+  compact: boolean;
   onPos: (p: PlayerState) => void;
 }) {
   const destRef = useRef<{ x: number; z: number } | null>(null);
@@ -1348,7 +1351,7 @@ export default function World3D({ keysRef, targetId, offerIds, lang, hornTick, s
       {Array.from({ length: 5 }, (_, i) => (
         <mesh key={`c2-${i}`} position={[36.6, 0.12, -15 + i * 1.6]}><boxGeometry args={[5.5, 0.05, 1]} /><meshStandardMaterial color="#fff4cf" roughness={1} /></mesh>
       ))}
-      {STREETS.map((s) => <StreetSign key={s.id} s={s} lang={lang} />)}
+      {STREETS.map((s) => <StreetSign key={s.id} s={s} lang={lang} compact={compact} />)}
       {LANDMARKS.map((l) => (
         <LandmarkMesh key={l.id} l={l} lang={lang} active={l.id === targetId} offer={offerSet.has(l.id)} />
       ))}
@@ -1399,7 +1402,7 @@ export default function World3D({ keysRef, targetId, offerIds, lang, hornTick, s
           </group>
         )
       ))}
-      <WelcomeArch />
+      <WelcomeArch showLabel={!compact} />
       <FlowerCart />
       <Traffic movers={moversRef} seed={seed} />
       <Dog cx={scatter.dog1.x} cz={scatter.dog1.z} rx={13} rz={11} speed={0.22} phase={0} color="#9a5c35" movers={moversRef} idx={0} />
@@ -1408,11 +1411,11 @@ export default function World3D({ keysRef, targetId, offerIds, lang, hornTick, s
       <Chickens cx={scatter.chick.x} cz={scatter.chick.z} movers={moversRef} />
       <Sheep x={scatter.sheep[0].x} z={scatter.sheep[0].z} phase={0} movers={moversRef} idx={6} />
       <Sheep x={scatter.sheep[1].x} z={scatter.sheep[1].z} phase={2.4} movers={moversRef} idx={7} />
-      <Bots lang={lang} movers={moversRef} spots={scatter.bots} visible={badges.bots} />
-      {customer && <CustomerNpc name={customer.name} color={customer.color} visible={badges.customer} />}
+      <Bots lang={lang} movers={moversRef} spots={scatter.bots} visible={badges.bots} compact={compact} />
+      {customer && <CustomerNpc name={customer.name} color={customer.color} visible={badges.customer} compact={compact} />}
       <Player
         keysRef={keysRef} destRef={destRef} movers={moversRef} circles={circles} resetTick={resetTick} startX={-7} startZ={0}
-        shirt={shirt} emote={emote} emoteTick={emoteTick} hornTick={hornTick} onPos={onPos}
+        shirt={shirt} emote={emote} emoteTick={emoteTick} hornTick={hornTick} compact={compact} onPos={onPos}
       />
     </Canvas>
   );

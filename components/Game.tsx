@@ -68,6 +68,8 @@ export default function Game() {
   const [mutedUi, setMutedUi] = useState(false);
   // fresh random town on every visit (seed only feeds the client-side 3D world)
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e9));
+  // small screens get smaller 3D labels so signs don't pile up
+  const [compact] = useState(() => typeof window !== "undefined" && window.innerWidth < 820);
   const [resetTick, setResetTick] = useState(0);
   const [worldReady, setWorldReady] = useState(false);
   const readyRef = useRef(false);
@@ -222,7 +224,7 @@ export default function Game() {
             keysRef={keysRef} targetId={targetId} offerIds={[]} lang={lang}
             hornTick={hornTick} shirt={shirt} emote={emote} emoteTick={emoteTick}
             customer={stage === "repair" ? { name: lang === "en" ? customer.nameEn : customer.nameTa, color: customer.color } : null}
-            seed={seed} resetTick={resetTick} badges={badges}
+            seed={seed} resetTick={resetTick} badges={badges} compact={compact}
             onPos={onPos}
           />
         )}
