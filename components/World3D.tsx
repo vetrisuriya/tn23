@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
-import { APRONS, BOT_BASES, LANDMARKS, STREETS, landmarkById, type Landmark, type Street } from "./worldData";
+import { APRONS, BOT_BASES, LANDMARKS, STREETS, type Landmark, type Street } from "./worldData";
 
 export type KeysRef = React.MutableRefObject<Record<string, boolean>>;
 export type DestRef = React.MutableRefObject<{ x: number; z: number } | null>;
@@ -35,6 +35,21 @@ function mulberry(seed: number) {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+// A long, uneven path that does not visibly close into a circle. Using several
+// different frequencies makes pedestrians and animals drift and turn naturally.
+function naturalWander(t: number, cx: number, cz: number, rx: number, rz: number, phase = 0) {
+  const point = (time: number) => {
+    const a = time + phase;
+    return {
+      x: cx + Math.sin(a) * rx * 0.54 + Math.sin(a * 0.43 + phase * 1.7) * rx * 0.31,
+      z: cz + Math.cos(a * 0.83) * rz * 0.56 + Math.sin(a * 0.29 + phase * 2.1) * rz * 0.24,
+    };
+  };
+  const p = point(t);
+  const next = point(t + 0.018);
+  return { ...p, dx: next.x - p.x, dz: next.z - p.z };
 }
 
 function genTrees(seed: number): [number, number][] {
@@ -573,7 +588,7 @@ function signTexture(en: string, ta: string) {
   return t;
 }
 
-function StreetSign({ s, lang, compact }: { s: Street; lang: "en" | "ta"; compact: boolean }) {
+function StreetSign({ s }: { s: Street }) {
   const tex = useMemo(() => signTexture(s.en, s.ta), [s.en, s.ta]);
   useEffect(() => () => { tex.dispose(); }, [tex]);
   return (
@@ -594,12 +609,6 @@ function StreetSign({ s, lang, compact }: { s: Street; lang: "en" | "ta"; compac
         <planeGeometry args={[5.2, 1.3]} />
         <meshBasicMaterial map={tex} toneMapped={false} />
       </mesh>
-      {/* floating pill so the street name reads from gameplay angles too */}
-      <Html center distanceFactor={compact ? 85 : 50} position={[0, 4.4, 0]} style={{ pointerEvents: "none" }}>
-        <div style={{ background: "#284b45ee", color: "#fff8dd", fontSize: compact ? 10 : 12, fontWeight: 800, padding: "3px 10px", borderRadius: 10, whiteSpace: "nowrap", border: "2px solid #f5d75d88" }}>
-          {lang === "en" ? s.en : s.ta}
-        </div>
-      </Html>
     </group>
   );
 }
@@ -619,12 +628,41 @@ function WelcomeArch({ showLabel }: { showLabel: boolean }) {
         <meshStandardMaterial color="#f3e6c8" roughness={0.85} />
       </mesh>
       {showLabel && (
-        <Html center distanceFactor={60} position={[0, 5.4, 0]} style={{ pointerEvents: "none" }}>
+        <Html center zIndexRange={[15, 0]} distanceFactor={60} position={[0, 5.4, 0]} style={{ pointerEvents: "none" }}>
           <div style={{ width: 190, textAlign: "center", color: "#7a2e1f", fontSize: 13, fontWeight: 900 }}>
             VELLORE · வேலூர்
           </div>
         </Html>
       )}
+    </group>
+  );
+}
+
+// Warm lamps make the narrow streets feel inhabited without adding more UI labels.
+function StreetLamps() {
+  const lamps: [number, number, number][] = [
+    [-19, 4.6, 0], [-8, -4.6, 0], [5, 4.6, 0], [18, -4.6, 0], [31, 4.6, 0],
+    [36.6, -21, Math.PI / 2], [36.6, 4, Math.PI / 2], [2.7, -27, Math.PI / 2],
+    [2.7, 17, Math.PI / 2], [-31.9, -21, Math.PI / 2], [-50, -27, Math.PI / 2],
+  ];
+  return (
+    <group>
+      {lamps.map(([x, z, r], i) => (
+        <group key={i} position={[x, 0, z]} rotation={[0, r, 0]}>
+          <mesh position={[0, 1.55, 0]} castShadow>
+            <cylinderGeometry args={[0.07, 0.11, 3.1, 8]} />
+            <meshStandardMaterial color="#35454a" roughness={0.75} />
+          </mesh>
+          <mesh position={[0.22, 3.03, 0]} rotation={[0, 0, -0.35]} castShadow>
+            <boxGeometry args={[0.5, 0.07, 0.07]} />
+            <meshStandardMaterial color="#35454a" roughness={0.75} />
+          </mesh>
+          <mesh position={[0.42, 2.85, 0]}>
+            <sphereGeometry args={[0.16, 10, 10]} />
+            <meshStandardMaterial color="#ffe9a8" emissive="#f0a83b" emissiveIntensity={0.6} roughness={0.45} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }
@@ -656,16 +694,15 @@ function FlowerCart() {
   );
 }
 
-function Player({ keysRef, destRef, movers, circles, resetTick, startX, startZ, shirt, emote, emoteTick, hornTick, compact, onPos }: {
+function Player({ keysRef, destRef, movers, circles, resetTick, startX, startZ, shirt, emote, emoteTick, compact, onPos }: {
   keysRef: KeysRef; destRef: DestRef; movers: MoversRef; circles: Circle[]; resetTick: number; startX: number; startZ: number;
-  shirt: string; emote: string; emoteTick: number; hornTick: number; compact: boolean;
+  shirt: string; emote: string; emoteTick: number; compact: boolean;
   onPos: (p: PlayerState) => void;
 }) {
   const g = useRef<THREE.Group>(null!);
   const wheelF = useRef<THREE.Mesh | null>(null);
   const wheelB = useRef<THREE.Mesh | null>(null);
   const pos = useRef({ x: startX, z: startZ, y: 0, vy: 0, angle: 0, jumpHeld: false });
-  const hornPulse = useRef(0);
   const resetSeen = useRef(0);
   const rider = useRef<THREE.Mesh>(null!);
   const [bubble, setBubble] = useState(false);
@@ -705,12 +742,10 @@ function Player({ keysRef, destRef, movers, circles, resetTick, startX, startZ, 
     }
     const moving = dx !== 0 || dz !== 0;
     if (moving) {
-      const speed = 13;
-      const nx = p.x + dx * speed * step;
-      const nz = p.z + dz * speed * step;
-      if (isOnRoad(nx, nz)) { p.x = nx; p.z = nz; }
-      else if (isOnRoad(nx, p.z)) { p.x = nx; }
-      else if (isOnRoad(p.x, nz)) { p.z = nz; }
+      // free riding: roads are fast, grass is slow — no getting stuck on edges
+      const speed = isOnRoad(p.x, p.z) ? 13 : 6.5;
+      p.x += dx * speed * step;
+      p.z += dz * speed * step;
       [p.x, p.z] = collide(p.x, p.z, circles);
       // soft push-out from every moving thing (vehicles, animals, people)
       const mv = movers.current;
@@ -731,10 +766,7 @@ function Player({ keysRef, destRef, movers, circles, resetTick, startX, startZ, 
       if (wheelB.current) wheelB.current.rotation.x += spin;
     }
     const jumpDown = !!k[" "];
-    if ((jumpDown && !p.jumpHeld && p.y <= 0.01) || (hornTick !== hornPulse.current && p.y <= 0.01)) {
-      p.vy = 7;
-    }
-    if (hornTick !== hornPulse.current) hornPulse.current = hornTick;
+    if (jumpDown && !p.jumpHeld && p.y <= 0.01) p.vy = 7;
     p.jumpHeld = jumpDown;
     // pedalling bob so the rider feels alive
     if (rider.current) {
@@ -769,11 +801,11 @@ function Player({ keysRef, destRef, movers, circles, resetTick, startX, startZ, 
         <sphereGeometry args={[0.3, 14, 14]} />
         <meshStandardMaterial color="#be764e" roughness={0.8} />
       </mesh>
-      <Html center distanceFactor={compact ? 95 : 60} position={[0, 2.7, 0]} style={{ pointerEvents: "none" }}>
-        <div style={{ background: "#fff8d9", color: "#263d37", fontSize: compact ? 9 : 10, fontWeight: 800, padding: "2px 8px", borderRadius: 8, whiteSpace: "nowrap" }}>You · நீங்கள்</div>
-      </Html>
-      {bubble && (
-        <Html center distanceFactor={compact ? 85 : 55} position={[0, 3.3, 0]} style={{ pointerEvents: "none" }}>
+      {!compact && <Html center zIndexRange={[15, 0]} distanceFactor={60} position={[0, 2.7, 0]} style={{ pointerEvents: "none" }}>
+        <div style={{ background: "#fff8d9", color: "#263d37", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 8, whiteSpace: "nowrap" }}>You · நீங்கள்</div>
+      </Html>}
+      {bubble && !compact && (
+        <Html center zIndexRange={[15, 0]} distanceFactor={55} position={[0, 3.3, 0]} style={{ pointerEvents: "none" }}>
           <div style={{ fontSize: 26, filter: "drop-shadow(0 2px 3px rgba(0,0,0,.3))" }}>{emote}</div>
         </Html>
       )}
@@ -804,8 +836,8 @@ function CustomerNpc({ name, color, visible, compact }: { name: string; color: s
           <Wheel position={[0, 0.5, 0.8]} />
           <Wheel position={[0, 0.5, -0.8]} />
         </group>
-        {visible && (
-          <Html center distanceFactor={compact ? 95 : 60} position={[0, 2.0, 0]} style={{ pointerEvents: "none" }}>
+        {visible && !compact && (
+          <Html center zIndexRange={[15, 0]} distanceFactor={60} position={[0, 2.0, 0]} style={{ pointerEvents: "none" }}>
             <div style={{ background: "#f5d75d", color: "#29453f", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 8, whiteSpace: "nowrap", border: "2px solid #fff8dd" }}>
               🔧 {name}
             </div>
@@ -826,12 +858,10 @@ function Bots({ lang, movers, spots, visible, compact }: { lang: "en" | "ta"; mo
       const g = refs.current[i];
       if (!g) return;
       const c = spots[i] ?? { x: b.cx, z: b.cz };
-      const a = t * b.speed + b.phase;
-      const x = c.x + Math.cos(a) * b.r;
-      const z = c.z + Math.sin(a * 1.3) * b.r;
-      movers.current[8 + i] = { x, z, r: 0.7 };
-      g.position.set(x, Math.abs(Math.sin(t * 2 + b.phase)) * 0.35, z);
-      g.rotation.y = Math.atan2(-Math.sin(a) * b.r, Math.cos(a * 1.3) * 1.3 * b.r);
+      const route = naturalWander(t * b.speed, c.x, c.z, b.r, b.r * 0.8, b.phase);
+      movers.current[8 + i] = { x: route.x, z: route.z, r: 0.7 };
+      g.position.set(route.x, 0.02, route.z);
+      g.rotation.y = Math.atan2(route.dx, route.dz);
     });
   });
   return (
@@ -848,8 +878,8 @@ function Bots({ lang, movers, spots, visible, compact }: { lang: "en" | "ta"; mo
               <sphereGeometry args={[0.27, 12, 12]} />
               <meshStandardMaterial color="#c98a5e" roughness={0.8} />
             </mesh>
-            {visible[i] && (
-              <Html center distanceFactor={compact ? 95 : 60} position={[0, 2.0, 0]} style={{ pointerEvents: "none" }}>
+            {visible[i] && !compact && (
+              <Html center zIndexRange={[15, 0]} distanceFactor={60} position={[0, 2.0, 0]} style={{ pointerEvents: "none" }}>
                 <div style={{ background: "rgba(255,248,217,.92)", color: "#263d37", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 8, whiteSpace: "nowrap" }}>
                   🛵 {lang === "en" ? b.en : b.ta}
                 </div>
@@ -1012,10 +1042,10 @@ interface RoadCar {
   speed: number; lane: number; laneCur: number; angle: number; turnP: number; refi: number;
 }
 
-// Keep right: lane side follows travel direction.
+// Keep left (India drives on the left): lane side follows travel direction.
 function laneFor(s: Street, dir: 1 | -1) {
-  if (s.kind === "h") return dir > 0 ? 1.6 : -1.6;
-  return dir > 0 ? -1.6 : 1.6;
+  if (s.kind === "h") return dir > 0 ? -1.6 : 1.6;
+  return dir > 0 ? 1.6 : -1.6;
 }
 function headingFor(s: Street, dir: 1 | -1) {
   if (s.kind === "h") return dir > 0 ? Math.PI / 2 : -Math.PI / 2;
@@ -1137,17 +1167,13 @@ function Dog({ cx, cz, rx, rz, speed, phase, color, movers, idx }: { cx: number;
   const g = useRef<THREE.Group>(null!);
   const tail = useRef<THREE.Mesh>(null!);
   useFrame((s) => {
-    const t = s.clock.elapsedTime * speed + phase;
-    const x = cx + Math.cos(t) * rx;
-    const z = cz + Math.sin(t * 1.4) * rz;
-    const vx = -Math.sin(t) * rx;
-    const vz = Math.cos(t * 1.4) * rz * 1.4;
-    movers.current[idx] = { x, z, r: 0.7 };
+    const route = naturalWander(s.clock.elapsedTime * speed, cx, cz, rx, rz, phase);
+    movers.current[idx] = { x: route.x, z: route.z, r: 0.7 };
     if (g.current) {
-      g.current.position.set(x, 0.05 + Math.abs(Math.sin(s.clock.elapsedTime * 6 + phase)) * 0.08, z);
-      g.current.rotation.y = Math.atan2(vx, vz);
+      g.current.position.set(route.x, 0.05, route.z);
+      g.current.rotation.y = Math.atan2(route.dx, route.dz);
     }
-    if (tail.current) tail.current.rotation.x = -0.5 + Math.sin(s.clock.elapsedTime * 9 + phase) * 0.35;
+    if (tail.current) tail.current.rotation.x = -0.5 + Math.sin(s.clock.elapsedTime * 2.4 + phase) * 0.18;
   });
   return (
     <group ref={g} position={[cx, 0, cz]}>
@@ -1166,15 +1192,13 @@ function Cow({ cx, cz, r, movers }: { cx: number; cz: number; r: number; movers:
   const g = useRef<THREE.Group>(null!);
   const head = useRef<THREE.Group>(null!);
   useFrame((s) => {
-    const t = s.clock.elapsedTime * 0.12;
-    const x = cx + Math.cos(t) * r;
-    const z = cz + Math.sin(t) * r;
-    movers.current[2] = { x, z, r: 1.4 };
+    const route = naturalWander(s.clock.elapsedTime * 0.1, cx, cz, r, r * 0.7, 0.7);
+    movers.current[2] = { x: route.x, z: route.z, r: 1.4 };
     if (g.current) {
-      g.current.position.set(x, 0.05, z);
-      g.current.rotation.y = Math.atan2(-Math.sin(t), Math.cos(t));
+      g.current.position.set(route.x, 0.05, route.z);
+      g.current.rotation.y = Math.atan2(route.dx, route.dz);
     }
-    if (head.current) head.current.position.y = 1.15 + Math.sin(s.clock.elapsedTime * 0.9) * 0.12;
+    if (head.current) head.current.position.y = 1.15 + Math.sin(s.clock.elapsedTime * 0.35) * 0.05;
   });
   return (
     <group ref={g} position={[cx, 0, cz]}>
@@ -1198,12 +1222,10 @@ function Chickens({ cx, cz, movers }: { cx: number; cz: number; movers: MoversRe
     const t = s.clock.elapsedTime;
     refs.current.forEach((g, i) => {
       if (!g) return;
-      const a = t * 0.5 + i * 2.1;
-      const x = cx + Math.cos(a) * (1.5 + i * 0.5);
-      const z = cz + Math.sin(a * 1.6) * 1.8;
-      movers.current[3 + i] = { x, z, r: 0.3 };
-      g.position.set(x, 0.05 + Math.abs(Math.sin(t * 5 + i)) * 0.06, z);
-      g.rotation.x = Math.sin(t * 5 + i) * 0.25;
+      const route = naturalWander(t * (0.09 + i * 0.018), cx, cz, 1.2 + i * 0.35, 1.1 + i * 0.22, i * 2.1);
+      movers.current[3 + i] = { x: route.x, z: route.z, r: 0.3 };
+      g.position.set(route.x, 0.05, route.z);
+      g.rotation.y = Math.atan2(route.dx, route.dz);
     });
   });
   return (
@@ -1222,13 +1244,11 @@ function Chickens({ cx, cz, movers }: { cx: number; cz: number; movers: MoversRe
 function Sheep({ x, z, phase, movers, idx }: { x: number; z: number; phase: number; movers: MoversRef; idx: number }) {
   const g = useRef<THREE.Group>(null!);
   useFrame((s) => {
-    const t = s.clock.elapsedTime;
-    const px = x + Math.sin(t * 0.3 + phase) * 1.2;
-    const pz = z + Math.cos(t * 0.23 + phase) * 1;
-    movers.current[idx] = { x: px, z: pz, r: 0.6 };
+    const route = naturalWander(s.clock.elapsedTime * 0.08, x, z, 1.1, 0.8, phase);
+    movers.current[idx] = { x: route.x, z: route.z, r: 0.6 };
     if (g.current) {
-      g.current.position.set(px, 0.05, pz);
-      g.current.rotation.x = Math.max(0, Math.sin(t * 0.7 + phase)) * 0.18;
+      g.current.position.set(route.x, 0.05, route.z);
+      g.current.rotation.y = Math.atan2(route.dx, route.dz);
     }
   });
   return (
@@ -1240,9 +1260,9 @@ function Sheep({ x, z, phase, movers, idx }: { x: number; z: number; phase: numb
   );
 }
 
-export default function World3D({ keysRef, targetId, offerIds, lang, hornTick, shirt, emote, emoteTick, customer, seed, resetTick, badges, compact, onPos }: {
+export default function World3D({ keysRef, targetId, offerIds, lang, shirt, emote, emoteTick, customer, seed, resetTick, badges, compact, onPos }: {
   keysRef: KeysRef; targetId: string | null; offerIds: string[]; lang: "en" | "ta";
-  hornTick: number; shirt: string; emote: string; emoteTick: number;
+  shirt: string; emote: string; emoteTick: number;
   customer: { name: string; color: string } | null;
   seed: number; resetTick: number; badges: { customer: boolean; bots: boolean[] };
   compact: boolean;
@@ -1269,7 +1289,7 @@ export default function World3D({ keysRef, targetId, offerIds, lang, hornTick, s
 
   const tapMove = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    // tap anywhere: the rider steers along the streets toward it (road-only slide)
+    // tap anywhere: the rider heads straight for it (fast on roads, slow on grass)
     destRef.current = {
       x: THREE.MathUtils.clamp(e.point.x, -BOUND, BOUND),
       z: THREE.MathUtils.clamp(e.point.z, -BOUND, BOUND),
@@ -1279,7 +1299,7 @@ export default function World3D({ keysRef, targetId, offerIds, lang, hornTick, s
   const offerSet = useMemo(() => new Set(offerIds), [offerIds]);
 
   return (
-    <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true, powerPreference: "high-performance" }} camera={{ position: [-95, 105, 95], fov: 11, near: 1, far: 1500 }} style={{ position: "absolute", inset: 0 }}>
+    <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true, powerPreference: "high-performance" }} camera={{ position: [-95, 105, 95], fov: 11, near: 1, far: 250 }} style={{ position: "absolute", inset: 0 }}>
       <color attach="background" args={["#bfe3ec"]} />
       <fog attach="fog" args={["#bfe3ec", 110, 250]} />
       <hemisphereLight args={["#fff6e8", "#5a8a6a", 1.0]} />
@@ -1327,7 +1347,7 @@ export default function World3D({ keysRef, targetId, offerIds, lang, hornTick, s
         );
       }))}
       {/* paved driveways to every door */}
-      {APRONS.filter((a) => !(a.x === -34 && a.z === -6)).map((a, i) => (
+      {APRONS.map((a, i) => (
         <mesh key={`ap${i}`} position={[a.x, 0.09, a.z]} receiveShadow onPointerDown={tapMove}>
           <boxGeometry args={[a.w, 0.06, a.d]} />
           <meshStandardMaterial color="#d9bd8d" roughness={1} />
@@ -1351,7 +1371,8 @@ export default function World3D({ keysRef, targetId, offerIds, lang, hornTick, s
       {Array.from({ length: 5 }, (_, i) => (
         <mesh key={`c2-${i}`} position={[36.6, 0.12, -15 + i * 1.6]}><boxGeometry args={[5.5, 0.05, 1]} /><meshStandardMaterial color="#fff4cf" roughness={1} /></mesh>
       ))}
-      {STREETS.map((s) => <StreetSign key={s.id} s={s} lang={lang} compact={compact} />)}
+      {STREETS.map((s) => <StreetSign key={s.id} s={s} />)}
+      <StreetLamps />
       {LANDMARKS.map((l) => (
         <LandmarkMesh key={l.id} l={l} lang={lang} active={l.id === targetId} offer={offerSet.has(l.id)} />
       ))}
@@ -1405,8 +1426,8 @@ export default function World3D({ keysRef, targetId, offerIds, lang, hornTick, s
       <WelcomeArch showLabel={!compact} />
       <FlowerCart />
       <Traffic movers={moversRef} seed={seed} />
-      <Dog cx={scatter.dog1.x} cz={scatter.dog1.z} rx={13} rz={11} speed={0.22} phase={0} color="#9a5c35" movers={moversRef} idx={0} />
-      <Dog cx={scatter.dog2.x} cz={scatter.dog2.z} rx={8} rz={6} speed={0.3} phase={2} color="#5d3a24" movers={moversRef} idx={1} />
+      <Dog cx={scatter.dog1.x} cz={scatter.dog1.z} rx={6} rz={4} speed={0.12} phase={0} color="#9a5c35" movers={moversRef} idx={0} />
+      <Dog cx={scatter.dog2.x} cz={scatter.dog2.z} rx={4} rz={3} speed={0.16} phase={2} color="#5d3a24" movers={moversRef} idx={1} />
       <Cow cx={scatter.cow.x} cz={scatter.cow.z} r={4} movers={moversRef} />
       <Chickens cx={scatter.chick.x} cz={scatter.chick.z} movers={moversRef} />
       <Sheep x={scatter.sheep[0].x} z={scatter.sheep[0].z} phase={0} movers={moversRef} idx={6} />
@@ -1415,7 +1436,7 @@ export default function World3D({ keysRef, targetId, offerIds, lang, hornTick, s
       {customer && <CustomerNpc name={customer.name} color={customer.color} visible={badges.customer} compact={compact} />}
       <Player
         keysRef={keysRef} destRef={destRef} movers={moversRef} circles={circles} resetTick={resetTick} startX={-7} startZ={0}
-        shirt={shirt} emote={emote} emoteTick={emoteTick} hornTick={hornTick} compact={compact} onPos={onPos}
+        shirt={shirt} emote={emote} emoteTick={emoteTick} compact={compact} onPos={onPos}
       />
     </Canvas>
   );

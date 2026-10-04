@@ -28,7 +28,7 @@ const STR = {
     thanks: "Nandri, TN23!",
     goShop: "Ride back to TN23 shop (follow the gold marker).",
     atShopRepair: "You are at the shop — tap each repair step.",
-    roadOnly: "Road riding only", crossing: "SLOW DOWN · PEDESTRIAN CROSSING",
+    roadOnly: "Roads are fast · grass is slow", crossing: "SLOW DOWN · PEDESTRIAN CROSSING",
     horn: "🔔 Horn", jump: "⤒ Hop", completed: "deliveries", nextUp: "Next customer is waiting at the shop…",
   },
   ta: {
@@ -40,7 +40,7 @@ const STR = {
     thanks: "நன்றி, TN23!",
     goShop: "TN23 கடைக்கு திரும்புங்கள் (தங்க அடையாளத்தை பின்தொடருங்கள்).",
     atShopRepair: "கடையில் இருக்கிறீர்கள் — ஒவ்வொரு படியாக தொடுங்கள்.",
-    roadOnly: "ரோட்டில் மட்டும் ஓட்டவும்", crossing: "மெதுவாக · பாதசாரி கிராசிங்",
+    roadOnly: "ரோட்டில் வேகம் · மண்ணில் மெதுவம்", crossing: "மெதுவாக · பாதசாரி கிராசிங்",
     horn: "🔔 ஹாரன்", jump: "⤒ குதி", completed: "டெலிவரிகள்", nextUp: "அடுத்த கஸ்டமர் கடையில் காத்திருக்கிறார்…",
   },
 } as const;
@@ -60,7 +60,6 @@ export default function Game() {
   const [earned, setEarned] = useState(0);
   const [doneCount, setDoneCount] = useState(0);
   const [talkId, setTalkId] = useState<string | null>(null);
-  const [hornTick, setHornTick] = useState(0);
   const [hornMsg, setHornMsg] = useState(false);
   const [emote, setEmote] = useState("👋");
   const [emoteTick, setEmoteTick] = useState(0);
@@ -68,8 +67,15 @@ export default function Game() {
   const [mutedUi, setMutedUi] = useState(false);
   // fresh random town on every visit (seed only feeds the client-side 3D world)
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e9));
-  // small screens get smaller 3D labels so signs don't pile up
-  const [compact] = useState(() => typeof window !== "undefined" && window.innerWidth < 820);
+  // Compact mode is live, so rotating a tablet or resizing the browser cannot leave
+  // desktop-sized scene labels sitting over the player.
+  const [compact, setCompact] = useState(() => typeof window !== "undefined" && window.innerWidth < 820);
+  useEffect(() => {
+    const syncCompact = () => setCompact(window.innerWidth < 820);
+    syncCompact();
+    window.addEventListener("resize", syncCompact);
+    return () => window.removeEventListener("resize", syncCompact);
+  }, []);
   const [resetTick, setResetTick] = useState(0);
   const [worldReady, setWorldReady] = useState(false);
   const readyRef = useRef(false);
@@ -167,7 +173,6 @@ export default function Game() {
 
   const ring = useCallback(() => {
     hornSound();
-    setHornTick((h) => h + 1);
     setHornMsg(true);
     setTimeout(() => setHornMsg(false), 900);
   }, []);
@@ -213,7 +218,6 @@ export default function Game() {
 
   const talk = talkId ? LANDMARKS.find((l) => l.id === talkId) ?? null : null;
   const toPct = (v: number) => `${((v + 70) / 140) * 100}%`;
-  const repaired = stage === "deliver";
   const progress = stage === "repair" ? Math.round((stepIdx / steps.length) * 50) : 50 + 25;
 
   return (
@@ -222,7 +226,7 @@ export default function Game() {
         {started && (
           <World3D
             keysRef={keysRef} targetId={targetId} offerIds={[]} lang={lang}
-            hornTick={hornTick} shirt={shirt} emote={emote} emoteTick={emoteTick}
+            shirt={shirt} emote={emote} emoteTick={emoteTick}
             customer={stage === "repair" ? { name: lang === "en" ? customer.nameEn : customer.nameTa, color: customer.color } : null}
             seed={seed} resetTick={resetTick} badges={badges} compact={compact}
             onPos={onPos}
@@ -242,6 +246,14 @@ export default function Game() {
                 <button className={styles.beginBtn} onClick={() => { ensureAudio(); clickSound(); startAmbience(); setStarted(true); }}>{s.begin}</button>
                 <p className={styles.hint}>{t.keys} · {s.roadOnly}</p>
                 <button className={styles.langBtn} onClick={() => setLang(lang === "en" ? "ta" : "en")}>{t.lang}</button>
+                <section className={styles.about}>
+                  <h2>{lang === "en" ? "A free Vellore browser game" : "இலவச வேலூர் உலாவி விளையாட்டு"}</h2>
+                  <p>
+                    {lang === "en"
+                      ? "Explore a miniature Kosapet in 3D — Masilamani St, Kuttai Medu Market, Sundareswarar Kovil, Subramani Swamy Kovil, Kosapet Bus Stop and more real Vellore landmarks. Fix punctures, chains and brakes at the TN23 cycle shop, then ride deliveries across town. English & தமிழ். No download, no sign-up."
+                      : "சிறிய 3D கோசப்பேட்டையை சுற்றுங்கள் — மசிலாமணி தெரு, குட்டை மேடு மார்க்கெட், சுந்தரேஸ்வரர் கோவில், சுப்ரமணி சுவாமி கோவில், கோசப்பேட்டை பஸ் ஸ்டாப் உட்பட உண்மை வேலூர் இடங்கள். TN23 சைக்கிள் கடையில் பஞ்சர், செயின், பிரேக் சரி செய்து டெலிவரி செய்யுங்கள். டவுன்லோடு இல்லை."}
+                  </p>
+                </section>
               </>
             ) : (
               <p className={styles.tagline}>{lang === "en" ? "Opening the shop…" : "கடை திறக்கிறது…"}</p>
@@ -292,7 +304,7 @@ export default function Game() {
         )}
         <div><i style={{ width: `${celebrateMsg ? 100 : progress}%` }} /></div>
         {target && !celebrateMsg && (
-          <b>{Math.round(hud.dist * 4)} m → {lang === "en" ? target.en : target.ta} · {s.roadOnly}</b>
+          <b>{Math.round(hud.dist * 4)} m → {lang === "en" ? target.en : target.ta} · {hud.onRoad ? t.onRoad : t.offRoad}</b>
         )}
         <span className={styles.earned}>₹{earned} {t.total} · {doneCount} {s.completed}</span>
         <p className={styles.fact}>{lang === "en" ? FACTS[doneCount % FACTS.length].en : FACTS[doneCount % FACTS.length].ta}</p>
@@ -342,24 +354,26 @@ export default function Game() {
         <p className={styles.touchHint}>{hornMsg ? "Peeep! 📯" : `${lang === "en" ? "D-pad or tap the ground to ride · buttons act" : "D-பேட் அல்லது தரையைத் தொட்டு ஓட்டவும்"}`}</p>
         {crossing && <p className={styles.nearMsg}>{s.crossing}</p>}
         {!celebrateMsg && stage === "deliver" && <p>{s.nextUp}</p>}
-        <div className={styles.dpad}>
-          <button {...hold("arrowup")}>↑</button>
-          <span>
-            <button {...hold("arrowleft")}>←</button>
-            <button {...hold("arrowdown")}>↓</button>
-            <button {...hold("arrowright")}>→</button>
-          </span>
-        </div>
-        <div className={styles.emoteBar}>
-          {EMOTES.map((e) => (
-            <button key={e} onClick={() => sendEmote(e)} className={e === emote ? styles.emoteActive : undefined}>{e}</button>
-          ))}
-          <span className={styles.outfitRow}>
-            {SHIRTS.map((c) => (
-              <button key={c} onClick={() => setShirt(c)} style={{ background: c }}
-                className={c === shirt ? styles.shirtActive : undefined} aria-label={c} />
+        <div className={styles.deckRow}>
+          <div className={styles.dpad}>
+            <button {...hold("arrowup")} aria-label="Ride forward">↑</button>
+            <span>
+              <button {...hold("arrowleft")} aria-label="Ride left">←</button>
+              <button {...hold("arrowdown")} aria-label="Ride back">↓</button>
+              <button {...hold("arrowright")} aria-label="Ride right">→</button>
+            </span>
+          </div>
+          <div className={styles.emoteBar}>
+            {EMOTES.map((e) => (
+              <button key={e} onClick={() => sendEmote(e)} className={e === emote ? styles.emoteActive : undefined}>{e}</button>
             ))}
-          </span>
+            <span className={styles.outfitRow}>
+              {SHIRTS.map((c) => (
+                <button key={c} onClick={() => setShirt(c)} style={{ background: c }}
+                  className={c === shirt ? styles.shirtActive : undefined} aria-label={c} />
+              ))}
+            </span>
+          </div>
         </div>
         <div className={styles.npcRow}>
           {LANDMARKS.filter((l) => l.npcEn).map((l) => (

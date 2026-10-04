@@ -64,7 +64,7 @@ export const LANDMARKS: Landmark[] = [
     en: "Mamu Tea Shop (?)", ta: "மாமு டீ கடை (?)", subEn: "Tea master", subTa: "டீ மாஸ்டர்",
     maps: "https://maps.app.goo.gl/D7SRKBevTPrjkGgA9",
     npcEn: "Mamu", npcTa: "மாமு", quoteEn: "Tea after the delivery? Don't hit my tea cart!", quoteTa: "டெலிவரி முடிச்சுட்டு டீ குடி! என் டீ வண்டி மேல சைக்கிள் ஏத்திடாதே!" },
-  { id: "ranga", x: -8, z: 8, w: 7, d: 5, h: 3, color: "#c6a0d4", roof: "house", face: 0,
+  { id: "ranga", x: -4.7, z: 12.5, w: 6, d: 5, h: 3, color: "#c6a0d4", roof: "house", face: 0,
     en: "Ranga Kalyana Mandapam (?)", ta: "ரங்கா கல்யாண மண்டபம் (?)", subEn: "Marriage hall", subTa: "கல்யாண மண்டபம்",
     maps: "https://maps.app.goo.gl/zsCfp4s22eczjNncA" },
   { id: "busstop", x: 16.5, z: 5.5, w: 4.5, d: 3, h: 2.5, color: "#41779b", roof: "shelter",
@@ -77,15 +77,15 @@ export const LANDMARKS: Landmark[] = [
     npcEn: "Meena", npcTa: "மீனா", quoteEn: "My bicycle is perfect! Nandri, TN23!", quoteTa: "என் சைக்கிள் சூப்பரா இருக்கு! நன்றி, TN23!" },
   { id: "salon", x: -38, z: 4, w: 5, d: 4, h: 3, color: "#ead29d", roof: "flat",
     en: "Raja Hair Salon (?)", ta: "ராஜா சலூன் (?)", subEn: "Cutting", subTa: "கட்டிங்" },
-  { id: "grocery", x: -11, z: 6, w: 6, d: 5, h: 3, color: "#e8d29a", roof: "stall",
+  { id: "grocery", x: -25.5, z: 6.5, w: 5, d: 4, h: 3, color: "#e8d29a", roof: "stall",
     en: "Anbu Grocery (?)", ta: "அன்பு மளிகை (?)", subEn: "Rice · Oil · Snacks", subTa: "அரிசி · எண்ணெய் · தின்பண்டம்",
     npcEn: "Palani", npcTa: "பழனி", quoteEn: "Fresh rice just arrived! Free cycle delivery nearby!", quoteTa: "புது அரிசி வந்திருக்கு! பக்கத்தில் சைக்கிள் டெலிவரி இலவசம்!" },
-  { id: "tea2", x: 16.5, z: 5.5, w: 4, d: 3, h: 2.5, color: "#8a5a3a", roof: "stall",
+  { id: "tea2", x: 14, z: -5.5, w: 4, d: 3, h: 2.5, color: "#8a5a3a", roof: "stall",
     en: "Anbu Tea Stall (?)", ta: "அன்பு டீ ஸ்டால் (?)", subEn: "Coffee · Tea", subTa: "காபி · டீ",
     npcEn: "Anbu", npcTa: "அன்பு", quoteEn: "Strong filter coffee, two minutes! Don't block the road!", quoteTa: "ஸ்ட்ராங் பில்டர் காபி, இரண்டு நிமிஷம்! ரோட்டை மறைக்காதே!" },
   { id: "medicals", x: 43, z: 8, w: 5, d: 4, h: 3, color: "#dfe8dd", roof: "flat", face: Math.PI,
     en: "Kannan Medicals (?)", ta: "கண்ணன் மெடிக்கல்ஸ் (?)", subEn: "Medicines", subTa: "மருந்துகள்" },
-  { id: "tailor", x: -15, z: 13, w: 5, d: 4, h: 3, color: "#d9b8d4", roof: "flat",
+  { id: "tailor", x: -15, z: 13.8, w: 5, d: 4, h: 3, color: "#d9b8d4", roof: "flat",
     en: "Lakshmi Tailors (?)", ta: "லட்சுமி டெய்லர்ஸ் (?)", subEn: "Stitching", subTa: "தையல்",
     npcEn: "Lakshmi", npcTa: "லட்சுமி", quoteEn: "Blouse ready tomorrow! Park the cycle properly!", quoteTa: "பிளவுஸ் நாளைக்கு ரெடி! சைக்கிளை ஒழுங்கா நிறுத்து!" },
   { id: "school", x: 9.5, z: -25, w: 4, d: 8, h: 4, color: "#ead29d", roof: "flat",
@@ -198,15 +198,15 @@ export interface Apron { x: number; z: number; w: number; d: number }
 export const APRONS: Apron[] = [
   { x: -14, z: 4, w: 4, d: 4 },      // TN23 shop -> Masilamani St
   { x: 21, z: 3.5, w: 3.5, d: 3 },   // Mamu tea -> Masilamani St
-  { x: -8, z: 4, w: 4, d: 4 },       // Ranga mandapam -> Masilamani St
-  { x: 16.5, z: 2.5, w: 4, d: 2 },   // Bus stop -> Masilamani St
+  { x: -4.7, z: 16.2, w: 4, d: 4 },  // Ranga mandapam -> Lakshmana Perumal St
+  { x: 16.5, z: 2.5, w: 4, d: 3 },   // Bus stop -> Masilamani St
   { x: 24, z: -1, w: 4, d: 4 },      // 4Knots -> Masilamani St
   { x: -33, z: 4, w: 5, d: 3 },      // Salon -> Avalkara St
   { x: -37, z: -8, w: 5, d: 4 },     // Meenakshi -> Avalkara St
-  { x: -11, z: 3, w: 4, d: 4 },      // Grocery -> Masilamani St
-  { x: 16.5, z: 3, w: 3.5, d: 3 },   // Tea stall 2 -> Masilamani St
+  { x: -25.5, z: 3.5, w: 3.5, d: 3 },// Grocery -> Masilamani St
+  { x: 14, z: -3.2, w: 3.5, d: 2.5 },// Tea stall 2 -> Masilamani St
   { x: 37, z: 8, w: 5, d: 3 },       // Medicals -> Sundareswarar Koil St
-  { x: -15, z: 7, w: 4, d: 9 },      // Tailor -> Masilamani St
+  { x: -15, z: 17.6, w: 3.5, d: 3.5 },// Tailor -> Lakshmana Perumal St
   { x: 9.5, z: -18, w: 4, d: 6 },    // School -> Palani Achari St
   { x: 36, z: -7, w: 6, d: 4 },      // Market -> Sundareswarar Koil St
   { x: 10, z: -36, w: 4, d: 5 },     // Subramani kovil -> Vinayaga Mudali St
